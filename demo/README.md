@@ -83,6 +83,10 @@ highlighter or a design system's code component attaches to.
 
 ## What it does not do
 
-There is no schema configuration, so the tags are Markdoc's built-ins only.
-A document using a host's own components reports `tag-undefined` for each of
-them, correctly. Host schemas are the next thing the bindings need.
+The demo passes no schema configuration, so the tags are Markdoc's built-ins
+only and the sample's `{% callout %}` reports `tag-undefined` -- which is the
+point of that part of the sample.
+
+The bindings themselves do take one now: `new Config({ tags: ... })` and the
+same stages as methods on it. The demo deliberately does not, because the
+undefined tag is the clearest way to show what the diagnostics are for.
