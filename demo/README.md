@@ -40,6 +40,47 @@ is text by the time it reaches here. A bare `sandbox` would be stricter still,
 and does not work -- it gives the frame an opaque origin and Chrome renders
 `srcdoc` as a blank page.
 
+## Where plain HTML meets a design system
+
+The demo is worth running once for this alone, because it is the thing the
+engine cannot tell you: a design system styles the elements it expects an
+author to write, and a renderer emits the elements the language defines. Those
+two sets are close, and they are not the same set.
+
+The code block is the first place they part, and it is instructive precisely
+because nothing is wrong.
+
+A fence renders as a bare `<pre data-language="rust">` with **no `<code>`
+inside**. That is upstream's own shape, not a liberty this port takes --
+`reference/src/schema.ts:53` is `render: 'pre'`, and
+`reference/src/ast/node.test.ts:105` asserts `new Tag('pre', { 'data-language':
+'ruby' }, ['test'])`.
+
+USWDS gives that element exactly one rule, the normalize idiom
+`code,kbd,pre,samp { font-family: monospace,monospace; font-size: 1em }`. The
+doubled `monospace` is a deliberate hack that stops browsers shrinking code to
+about 13px, and it works. Measured inside the preview frame:
+
+| | computed size | the same string, rendered |
+|---|---|---|
+| prose text | 16.96px, Source Sans Pro Web | 156.6px wide |
+| `<pre>` | 16.96px, generic monospace | 214.3px wide, **1.37x** |
+
+So the code is not set larger. It is set in a face whose glyphs are 37% wider
+with a taller x-height, at an identical size, and reads as larger. What USWDS
+has not done is give `<pre>` a typeface of its own, because it expects a code
+block to carry its own classes; `usa-prose` covers what normalize covers and
+stops there.
+
+**The lesson for anything built on this:** budget for a small element mapping
+per design system. Not a port, not a fork of the renderer -- a handful of rules
+that hand the design system's own tokens to the elements the engine emits. The
+demo deliberately does not include one, so that the seam stays visible rather
+than being papered over by the thing that is supposed to demonstrate it.
+
+`data-language` is on the element for exactly this reason: it is the hook a
+highlighter or a design system's code component attaches to.
+
 ## What it does not do
 
 There is no schema configuration, so the tags are Markdoc's built-ins only.
