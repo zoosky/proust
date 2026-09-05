@@ -144,15 +144,77 @@ Canonical Markdoc source. `format(format(s)) === format(s)`, and a formatted
 document parses to the document the original parsed to, so an editor can
 rewrite a buffer in place without losing anything.
 
+## Your own tags
+
+The four functions above use Markdoc's built-in configuration, so a tag your
+host defines reports `tag-undefined`. Build a `Config` once and call the same
+stages on it:
+
+```js
+import init, { Config } from "accent-proust";
+await init();
+
+const config = new Config({
+  tags: {
+    callout: {
+      render: "Callout",
+      attributes: {
+        type: { type: "String", default: "note", matches: ["note", "warning"] },
+        title: { type: "String", required: true },
+      },
+    },
+  },
+  variables: { flags: { beta: true } },
+});
+
+config.validate(source);   // knows `callout`, checks its attributes
+config.renderHtml(source);
+config.transform(source);
+```
+
+Declarations merge over the built-ins, so `{% if %}` and `{% partial %}` keep
+working. Construction does the parsing and checking once; the methods then cost
+what the free functions cost, which is what an editor revalidating on every
+keystroke needs. Call `config.free()` when you are done with it.
+
+`nodes` takes the same shape as `tags`, keyed by Markdoc node type, so you can
+change what a `heading` renders as.
+
+### What crosses, and what does not
+
+A schema is data and crosses whole: `render`, `children`, `attributes`,
+`slots`, `selfClosing`, `inline`, `description`, and on an attribute `type`,
+`default`, `required`, `matches`, `render`, `errorLevel`.
+
+Attribute types are written as the strings `"String"`, `"Number"`, `"Boolean"`,
+`"Object"`, `"Array"`. Markdoc uses the JavaScript constructors, and a
+constructor is a function. An array of them is a union.
+
+A hook is code, and code does not cross: `transform`, `validate`, a custom
+attribute type, a `RegExp` in `matches`, and host-defined `functions`. **So the
+browser is never stricter than your server, only faster.** Keep the server as
+the authority; this is an early warning.
+
+Nothing is dropped in silence. A configuration carrying something that cannot
+cross is refused, naming the path to it:
+
+```
+config.tags.callout.attributes.type.type: unknown attribute type "Str";
+expected String, Number, Boolean, Object, Array, or an array of those
+```
+
+A schema that half arrives is worse than one that does not, because the missing
+half is invisible until an author trips over it.
+
 ## Not supported yet
 
-Variables, partials and host-defined tag schemas. Every call uses Markdoc's
-built-in configuration: its default nodes, tags and functions. Substitute
-variables before calling if you need them.
+Partials, and host-defined functions. A parsed partial borrows its source, so
+holding both across the boundary needs a design this does not have. Both are
+refused by name rather than ignored.
 
-`parse` is not exposed either — the abstract syntax tree has no JavaScript
-shape here yet. `validate` and `transform` cover what a preview and a custom
-renderer need.
+`parse` is not exposed either: the abstract syntax tree has no JavaScript shape
+here yet. `validate` and `transform` cover what a preview and a custom renderer
+need.
 
 ## Differences from `@markdoc/markdoc`
 

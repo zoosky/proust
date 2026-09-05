@@ -19,6 +19,18 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   mapping to JavaScript objects lives there rather than behind a `serde`
   feature here.
 
+- **Host schema configuration for the WebAssembly bindings.** `new Config({
+  tags, nodes, variables })` builds a validator configuration from declared
+  data and merges it over Markdoc's built-ins; `validate`, `renderHtml` and
+  `transform` are methods on it. Without this the bindings knew only Markdoc's
+  own tags, so a document written for a host reported `tag-undefined` for every
+  component it used.
+
+  Hooks, custom attribute types, `RegExp` in `matches` and host functions are
+  code and do not cross, so the browser is never stricter than the server. They
+  are refused by name with the path to them rather than dropped, because a
+  schema that half arrives hides the half that is missing.
+
 - **Diagnostic positions in UTF-16 code units.** A location edge from the
   WebAssembly bindings carries `line`, `character`, `offset` and `byteOffset`,
   and every field but the last is counted the way JavaScript counts a string
